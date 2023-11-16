@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "clockery"
+version = "0.1.0"
+description = "A python clock that show time differences in timezones"
+authors = ["timelessnesses <timelessnesses@timelessnesses.me>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pygame = "^2.5.2"
+pytz = "^2023.3.post1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
