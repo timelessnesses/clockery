@@ -34,7 +34,7 @@ class Clock:
             date = time.strftime("%I:%M:%S %p")
         self.__center(date, surface, date_font, self.__get_middle(surface))
         if self.timezone:
-            offset = f"{self.timezone._utcoffset if self.timezone.zone is not None else 'local time'}."
+            offset = f"{self.timezone._utcoffset if self.timezone._utcoffset is not None else 'local time'}."
         else:
             offset = f"local time."
         self.__center(f"Currently {offset}", surface, normal_font, self.__get_middle(surface) + 90)
