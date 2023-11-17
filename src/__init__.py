@@ -37,7 +37,7 @@ def run():
     else:
         config = get_config(x)
 
-    revert = config["revert"]
+    revert:bool = config["revert"]
     frame_cap = 0
     while running:
         clock.tick(frame_cap)  # cpu won't be fucked over
@@ -46,6 +46,9 @@ def run():
             if event.type == pygame.QUIT:
                 running = not running
                 continue
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    revert = not revert
             # elif event.type == pygame.VIDEORESIZE:
             #     w, h = event.size
             #     should_change = False
@@ -57,7 +60,6 @@ def run():
             #         should_change = True
             #     if should_change:
             #         window = pygame.display.set_mode((w,h), pygame.RESIZABLE)
-
         fps = clock.get_fps()
         if fps >= max_fps:
             max_fps = fps
@@ -67,7 +69,7 @@ def run():
         # cProfile.runctx("apply(config, window)", globals(), locals())
         clear(window, revert)
         apply(config, window, revert)
-        center("Clockery", window, font2, 100, revert)
+        center("Clockery", window, font2, 50, revert)
         to_screen(render_font(font, f"FPS: {round(fps, 2)}", revert), window, (0, 0))
         to_screen(
             render_font(font, f"Max: {round(max_fps, 2)}", revert), window, (0, 15)
@@ -98,7 +100,7 @@ def to_screen(
 
 
 def clear(window: pygame.Surface, revert: bool):
-    window.fill("black") if not revert else window.fill((255, 255, 255))
+    window.fill("black") if not revert else window.fill("white")
 
 
 def center(
@@ -136,30 +138,46 @@ def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
     num_rectangles = len(config["clocks"])
     rectangles = create_surfaces(num_rectangles, window, revert)
     yes: list[pygame.Surface] = []
-    poses = calculate_positions(num_rectangles, window)
-    w, h = window.get_size()
+    # w, h = window.get_size()
     for c, i in zip(config["clocks"], rectangles):
         # pygame.draw.rect(i, (255,255,255), (100 - 5, 75 - 5, w + 2 * 5, h + 2 * 5), 5)
         if "gmt" in c.lower() or "utc" in c.lower():
             c = "Etc/" + c
-        c_class = clock.Clock(c, config["am_pm"], config["revert"])
-        res = c_class.render(c_class.convert_time_to_tz(), i)
+        c_class = clock.Clock(c, config["am_pm"], revert)
+        res = c_class.render(c_class.convert_time_to_tz(), i[0])
         yes.append(res)
-    for x, pos in zip(yes, poses):
+    for x, pos in rectangles:
         window.blit(x, pos)
 
-
-def create_surfaces(num_surfaces: int, window: pygame.Surface, revert: bool):
+def create_surfaces(num_corners: int, window: pygame.Surface, revert: bool) -> list[tuple[pygame.Surface, pygame.Rect]]:
     w, h = window.get_size()
-    surface_width = w // num_surfaces
     background_color = (0, 0, 0) if not revert else (255, 255, 255)
-    x: list[pygame.Surface] = []
-    for _ in range(num_surfaces):
-        s = pygame.Surface((surface_width, h))
-        s.fill(background_color)
-        x.append(s)
+    
+    x = []
+    
+    # Calculate the number of rows and columns needed
+    num_rows = int(num_corners ** 0.5)
+    num_cols = (num_corners + num_rows - 1) // num_rows
+    
+    # Calculate the size of each surface
+    surface_width = w // num_cols
+    surface_height = h // num_rows
+    
+    # Create surfaces for each corner
+    for i in range(num_rows):
+        for j in range(num_cols):
+            index = i * num_cols + j
+            if index < num_corners:
+                s = pygame.Surface((surface_width, surface_height))
+                s.fill(background_color)
+                
+                # Position the surfaces
+                s_rect = s.get_rect(topleft=(surface_width * j, surface_height * i))
+                
+                x.append((s, s_rect))
+    
     return x
-    # return [pygame.Surface((surface_width, h)).fill(background_color) for _ in range(num_surfaces)]
+
 
 
 def calculate_positions(num_surfaces: int, window: pygame.Surface):

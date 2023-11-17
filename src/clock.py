@@ -75,7 +75,7 @@ class Clock:
 
     def __render_font(self, font: pygame.font.Font, text: str) -> pygame.Surface:
         return font.render(
-            text, True, (255, 255, 255) if not self.revert else (0, 0, 0)
+            text, True, "white" if not self.revert else "black"
         )
 
     def __to_screen(
