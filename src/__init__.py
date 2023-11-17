@@ -1,6 +1,7 @@
 import json
 import os
 import typing
+
 # import cProfile
 import pygame
 
@@ -35,7 +36,6 @@ def run():
         exit()
     else:
         config = get_config(x)
-        pass
 
     revert = config["revert"]
     frame_cap = 0
@@ -66,12 +66,24 @@ def run():
 
         # cProfile.runctx("apply(config, window)", globals(), locals())
         clear(window, revert)
-        apply(config,window, revert)        
+        apply(config, window, revert)
         center("Clockery", window, font2, 100, revert)
         to_screen(render_font(font, f"FPS: {round(fps, 2)}", revert), window, (0, 0))
-        to_screen(render_font(font, f"Max: {round(max_fps, 2)}", revert), window, (0, 15))
-        to_screen(render_font(font, f"Min: {round(min_fps, 2)}", revert), window, (0, 30))
-        to_screen(render_font(font, f"Capped: {str(round(frame_cap, 2)) + ' FPS' if frame_cap else 'Unlimited FPS'}", revert), window, (0, 45))
+        to_screen(
+            render_font(font, f"Max: {round(max_fps, 2)}", revert), window, (0, 15)
+        )
+        to_screen(
+            render_font(font, f"Min: {round(min_fps, 2)}", revert), window, (0, 30)
+        )
+        to_screen(
+            render_font(
+                font,
+                f"Capped: {str(round(frame_cap, 2)) + ' FPS' if frame_cap else 'Unlimited FPS'}",
+                revert,
+            ),
+            window,
+            (0, 45),
+        )
         # print(f"FPS: {round(fps, 2)}")
         pygame.display.update()
 
@@ -90,7 +102,11 @@ def clear(window: pygame.Surface, revert: bool):
 
 
 def center(
-    text: str, window: pygame.Surface, font: pygame.font.Font, y: typing.Optional[int], revert: bool
+    text: str,
+    window: pygame.Surface,
+    font: pygame.font.Font,
+    y: typing.Optional[int],
+    revert: bool,
 ):
     rendered = render_font(font, text, revert)
     middle = get_middle_surface(rendered, window, y)
@@ -109,7 +125,7 @@ def get_middle_surface(
 
 
 def render_font(font: pygame.font.Font, text: str, revert: bool) -> pygame.Surface:
-    return font.render(text, True, (255, 255, 255) if not revert else (0,0,0))
+    return font.render(text, True, (255, 255, 255) if not revert else (0, 0, 0))
 
 
 def get_config(raw: str | bytes) -> dict:
@@ -125,7 +141,7 @@ def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
     for c, i in zip(config["clocks"], rectangles):
         # pygame.draw.rect(i, (255,255,255), (100 - 5, 75 - 5, w + 2 * 5, h + 2 * 5), 5)
         if "gmt" in c.lower() or "utc" in c.lower():
-            c = "Etc/"+c
+            c = "Etc/" + c
         c_class = clock.Clock(c, config["am_pm"], config["revert"])
         res = c_class.render(c_class.convert_time_to_tz(), i)
         yes.append(res)
@@ -136,7 +152,7 @@ def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
 def create_surfaces(num_surfaces: int, window: pygame.Surface, revert: bool):
     w, h = window.get_size()
     surface_width = w // num_surfaces
-    background_color = (0,0,0) if not revert else (255,255,255)
+    background_color = (0, 0, 0) if not revert else (255, 255, 255)
     x: list[pygame.Surface] = []
     for _ in range(num_surfaces):
         s = pygame.Surface((surface_width, h))

@@ -1,10 +1,12 @@
 import datetime
-import typing
 import os
+import typing
+
 import pygame
 import pytz
 
 pygame.font.init()
+
 
 class Clock:
     timezone: typing.Optional[pytz.BaseTzInfo]
@@ -49,7 +51,13 @@ class Clock:
         _, h = surface.get_size()
         return h // 2
 
-    def __center(self, text: str, window: pygame.Surface, font: pygame.font.Font, y: typing.Optional[int]):
+    def __center(
+        self,
+        text: str,
+        window: pygame.Surface,
+        font: pygame.font.Font,
+        y: typing.Optional[int],
+    ):
         max_width, max_height = window.get_size()
         wrapped_lines = self.__word_wrap(text, max_width, font)
 
@@ -59,12 +67,16 @@ class Clock:
         for line in wrapped_lines:
             rendered = self.__render_font(font, line)
             rect = rendered.get_rect()
-            rect.topleft = (max_width - rect.width) // 2, y_centered  # Center horizontally
+            rect.topleft = (
+                max_width - rect.width
+            ) // 2, y_centered  # Center horizontally
             self.__to_screen(rendered, window, rect=rect)
             y_centered += font.get_height()
 
     def __render_font(self, font: pygame.font.Font, text: str) -> pygame.Surface:
-        return font.render(text, True, (255, 255, 255) if not self.revert else (0,0,0))
+        return font.render(
+            text, True, (255, 255, 255) if not self.revert else (0, 0, 0)
+        )
 
     def __to_screen(
         self,
@@ -76,19 +88,19 @@ class Clock:
         window.blit(text, rect if rect is not None else dest)  # type: ignore
 
     def __word_wrap(self, text: str, max_width: int, font: pygame.font.Font):
-        words = text.split(' ')
+        words = text.split(" ")
         lines = []
-        current_line = ''
+        current_line = ""
 
         for word in words:
-            test_line = current_line + word + ' '
+            test_line = current_line + word + " "
             test_width, _ = font.size(test_line)
 
             if test_width <= max_width:
                 current_line = test_line
             else:
                 lines.append(current_line.rstrip())
-                current_line = word + ' '
+                current_line = word + " "
 
         lines.append(current_line.rstrip())
 
