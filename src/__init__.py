@@ -13,7 +13,7 @@ flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
 def run():
     pygame.init()
 
-    window = pygame.display.set_mode((800, 600), flags)
+    window = pygame.display.set_mode((800, 600), flags)  # type: ignore
     pygame.display.set_caption("Clockery")
     window.fill((0, 0, 0))
     pygame.font.init()
