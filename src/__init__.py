@@ -1,8 +1,7 @@
 import json
 import os
-import random
 import typing
-
+# import cProfile
 import pygame
 
 from . import clock
@@ -13,7 +12,7 @@ flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
 def run():
     pygame.init()
 
-    window = pygame.display.set_mode((800, 800), flags)
+    window = pygame.display.set_mode((800, 600), flags)
     pygame.display.set_caption("Clockery")
     window.fill((0, 0, 0))
     pygame.font.init()
@@ -27,8 +26,21 @@ def run():
     max_fps = 0
     min_fps = 0
 
+    try:
+        with open(os.getcwd() + "/config.json") as fp:
+            x = fp.read()
+    except FileNotFoundError:
+        with open(os.getcwd() + "/config.json", "w") as fp:
+            fp.write(json.dumps({"clocks": ["local"], "am_pm": False, "revert": False}))
+        exit()
+    else:
+        config = get_config(x)
+        pass
+
+    revert = config["revert"]
+    frame_cap = 0
     while running:
-        clock.tick(0)  # cpu won't be fucked over
+        clock.tick(frame_cap)  # cpu won't be fucked over
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -52,30 +64,16 @@ def run():
         elif fps <= min_fps and int(fps) != 0:
             min_fps = fps
 
-        clear(window)
-
-        center("Fucking Shit!", window, font2, 30)
-
-        try:
-            with open(os.getcwd() + "/config.json") as fp:
-                x = fp.read()
-        except FileNotFoundError:
-            with open(os.getcwd() + "/config.json", "w") as fp:
-                fp.write(json.dumps({"clocks": ["local"], "am_pm": False}))
-            exit()
-        else:
-            config = get_config(x)
-            apply(config, window)
-            pass
-
-
-
-        to_screen(render_font(font, f"FPS: {round(fps, 2)}"), window, (0, 0))
-        to_screen(render_font(font, f"Max: {round(max_fps, 2)}"), window, (0, 15))
-        to_screen(render_font(font, f"Min: {round(min_fps, 2)}"), window, (0, 30))
-
+        # cProfile.runctx("apply(config, window)", globals(), locals())
+        clear(window, revert)
+        apply(config,window, revert)        
+        center("Clockery", window, font2, 100, revert)
+        to_screen(render_font(font, f"FPS: {round(fps, 2)}", revert), window, (0, 0))
+        to_screen(render_font(font, f"Max: {round(max_fps, 2)}", revert), window, (0, 15))
+        to_screen(render_font(font, f"Min: {round(min_fps, 2)}", revert), window, (0, 30))
+        to_screen(render_font(font, f"Capped: {str(round(frame_cap, 2)) + ' FPS' if frame_cap else 'Unlimited FPS'}", revert), window, (0, 45))
         # print(f"FPS: {round(fps, 2)}")
-        pygame.display.flip()
+        pygame.display.update()
 
 
 def to_screen(
@@ -87,14 +85,14 @@ def to_screen(
     window.blit(text, rect if rect is not None else dest)  # type: ignore
 
 
-def clear(window: pygame.Surface):
-    window.fill("black")
+def clear(window: pygame.Surface, revert: bool):
+    window.fill("black") if not revert else window.fill((255, 255, 255))
 
 
 def center(
-    text: str, window: pygame.Surface, font: pygame.font.Font, y: typing.Optional[int]
+    text: str, window: pygame.Surface, font: pygame.font.Font, y: typing.Optional[int], revert: bool
 ):
-    rendered = render_font(font, text)
+    rendered = render_font(font, text, revert)
     middle = get_middle_surface(rendered, window, y)
     to_screen(rendered, window, rect=middle)
 
@@ -110,34 +108,42 @@ def get_middle_surface(
     return r
 
 
-def render_font(font: pygame.font.Font, text: str) -> pygame.Surface:
-    return font.render(text, True, (255, 255, 255))
+def render_font(font: pygame.font.Font, text: str, revert: bool) -> pygame.Surface:
+    return font.render(text, True, (255, 255, 255) if not revert else (0,0,0))
 
 
 def get_config(raw: str | bytes) -> dict:
     return json.loads(raw)
 
 
-def apply(config: dict, window: pygame.Surface) -> None:
-    w, h = window.get_size()
+def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
     num_rectangles = len(config["clocks"])
-    rectangles = create_surfaces(num_rectangles, window)
+    rectangles = create_surfaces(num_rectangles, window, revert)
     yes: list[pygame.Surface] = []
     poses = calculate_positions(num_rectangles, window)
-    for c in config["clocks"]:
-        c_class = clock.Clock(c, config["am_pm"])
-        draw = random.choice(rectangles)
-        rectangles.remove(draw)
-        res = c_class.render(c_class.convert_time_to_tz(), draw)
+    w, h = window.get_size()
+    for c, i in zip(config["clocks"], rectangles):
+        # pygame.draw.rect(i, (255,255,255), (100 - 5, 75 - 5, w + 2 * 5, h + 2 * 5), 5)
+        if "gmt" in c.lower() or "utc" in c.lower():
+            c = "Etc/"+c
+        c_class = clock.Clock(c, config["am_pm"], config["revert"])
+        res = c_class.render(c_class.convert_time_to_tz(), i)
         yes.append(res)
     for x, pos in zip(yes, poses):
         window.blit(x, pos)
 
 
-def create_surfaces(num_surfaces: int, window: pygame.Surface):
+def create_surfaces(num_surfaces: int, window: pygame.Surface, revert: bool):
     w, h = window.get_size()
     surface_width = w // num_surfaces
-    return [pygame.Surface((surface_width, h)) for _ in range(num_surfaces)]
+    background_color = (0,0,0) if not revert else (255,255,255)
+    x: list[pygame.Surface] = []
+    for _ in range(num_surfaces):
+        s = pygame.Surface((surface_width, h))
+        s.fill(background_color)
+        x.append(s)
+    return x
+    # return [pygame.Surface((surface_width, h)).fill(background_color) for _ in range(num_surfaces)]
 
 
 def calculate_positions(num_surfaces: int, window: pygame.Surface):

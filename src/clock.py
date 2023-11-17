@@ -4,13 +4,17 @@ import os
 import pygame
 import pytz
 
+pygame.font.init()
 
 class Clock:
     timezone: typing.Optional[pytz.BaseTzInfo]
-    am_pm: bool # Poiuu You are Fucking Shit
+    am_pm: bool  # Poiuu You are Fucking Shit
     name: str
+    date_font = pygame.font.Font(os.getcwd() + "/src/fonts/digital.ttf", 40)
+    normal_font = pygame.font.Font(pygame.font.get_default_font(), 20)
+    revert: bool
 
-    def __init__(self, config: str, am_pm: bool) -> None:
+    def __init__(self, config: str, am_pm: bool, revert: bool) -> None:
         if config.lower() != "local":
             self.timezone = pytz.timezone(config)
             self.name = config.capitalize()
@@ -18,6 +22,7 @@ class Clock:
             self.timezone = None
             self.name = "Local time"
         self.am_pm = am_pm
+        self.revert = revert
 
     def convert_time_to_tz(self) -> datetime.datetime:
         now = datetime.datetime.now(self.timezone)
@@ -26,36 +31,40 @@ class Clock:
     def render(
         self, time: datetime.datetime, surface: pygame.Surface
     ) -> pygame.Surface:
-        date_font = pygame.font.Font(os.getcwd() + "/src/fonts/digital.ttf", 40)
-        normal_font = pygame.font.Font(pygame.font.get_default_font(), 20)
         if not self.am_pm:
             date = time.strftime("%H:%M:%S")
         else:
             date = time.strftime("%I:%M:%S %p")
-        self.__center(date, surface, date_font, self.__get_middle(surface))
+        middle_y = self.__get_middle(surface)
+        self.__center(date, surface, self.date_font, middle_y)
         if self.timezone:
-            offset = f"{self.timezone._utcoffset if self.timezone._utcoffset is not None else 'local time'}."
+            offset = self.name
         else:
             offset = f"local time."
-        self.__center(f"Currently {offset}", surface, normal_font, self.__get_middle(surface) + 90)
+        offset_middle_y = middle_y + 90
+        self.__center(f"Currently {offset}", surface, self.normal_font, offset_middle_y)
         return surface
 
     def __get_middle(self, surface: pygame.Surface) -> int:
-        w, h = surface.get_size()
+        _, h = surface.get_size()
         return h // 2
 
     def __center(self, text: str, window: pygame.Surface, font: pygame.font.Font, y: typing.Optional[int]):
-        rendered = self.__render_font(font, text)
-        middle = self.__get_middle_surface(rendered, window, y)
-        self.__to_screen(rendered, window, rect=middle)
+        max_width, max_height = window.get_size()
+        wrapped_lines = self.__word_wrap(text, max_width, font)
 
-    def __get_middle_surface(self, surface: pygame.Surface, window: pygame.Surface, y: typing.Optional[int]):
-        w, h = window.get_size()
-        r = surface.get_rect(center=(w / 2, y))
-        return r
+        total_height = len(wrapped_lines) * font.get_height()
+        y_centered = y - total_height // 2  # type: ignore
+
+        for line in wrapped_lines:
+            rendered = self.__render_font(font, line)
+            rect = rendered.get_rect()
+            rect.topleft = (max_width - rect.width) // 2, y_centered  # Center horizontally
+            self.__to_screen(rendered, window, rect=rect)
+            y_centered += font.get_height()
 
     def __render_font(self, font: pygame.font.Font, text: str) -> pygame.Surface:
-        return font.render(text, True, (255, 255, 255))
+        return font.render(text, True, (255, 255, 255) if not self.revert else (0,0,0))
 
     def __to_screen(
         self,
@@ -65,3 +74,22 @@ class Clock:
         rect: typing.Optional[pygame.Rect] = None,
     ) -> None:
         window.blit(text, rect if rect is not None else dest)  # type: ignore
+
+    def __word_wrap(self, text: str, max_width: int, font: pygame.font.Font):
+        words = text.split(' ')
+        lines = []
+        current_line = ''
+
+        for word in words:
+            test_line = current_line + word + ' '
+            test_width, _ = font.size(test_line)
+
+            if test_width <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line.rstrip())
+                current_line = word + ' '
+
+        lines.append(current_line.rstrip())
+
+        return lines
