@@ -1,1 +1,1 @@
-{"clocks": ["local", "America/Argentina/Buenos_Aires", "Australia/Sydney", "America/Vancouver"], "am_pm": false, "revert": true}
+{"clocks": ["local", "Australia/Sydney", "America/Argentina/Buenos_Aires", "America/Vancouver"], "am_pm": false, "revert": false, "enable_bg": true}

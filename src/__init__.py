@@ -10,7 +10,7 @@ from . import clock
 flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
 
 
-def run():
+def run(fps_cap: int):
     pygame.init()
 
     window = pygame.display.set_mode((800, 600), flags)  # type: ignore
@@ -33,14 +33,15 @@ def run():
     except FileNotFoundError:
         with open(os.getcwd() + "/config.json", "w") as fp:
             fp.write(json.dumps({"clocks": ["local"], "am_pm": False, "revert": False}))
-        exit()
-    else:
-        config = get_config(x)
+        with open(os.getcwd() + "/config.json") as fp:
+            x = fp.read()
+    finally:
+        config = get_config(x) # type: ignore
 
     revert:bool = config["revert"]
-    frame_cap = 0
+    am_pm: bool = config["am_pm"]
     while running:
-        clock.tick(frame_cap)  # cpu won't be fucked over
+        clock.tick(fps_cap)  # cpu won't be fucked over
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -49,6 +50,8 @@ def run():
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     revert = not revert
+                elif event.key == pygame.K_a:
+                    am_pm = not am_pm
             # elif event.type == pygame.VIDEORESIZE:
             #     w, h = event.size
             #     should_change = False
@@ -68,7 +71,7 @@ def run():
 
         # cProfile.runctx("apply(config, window)", globals(), locals())
         clear(window, revert)
-        apply(config, window, revert)
+        apply(config, window, revert, am_pm)
         center("Clockery", window, font2, 50, revert)
         to_screen(render_font(font, f"FPS: {round(fps, 2)}", revert), window, (0, 0))
         to_screen(
@@ -80,7 +83,7 @@ def run():
         to_screen(
             render_font(
                 font,
-                f"Capped: {str(round(frame_cap, 2)) + ' FPS' if frame_cap else 'Unlimited FPS'}",
+                f"Capped: {str(round(fps_cap, 2)) + ' FPS' if fps_cap else 'Unlimited FPS'}",
                 revert,
             ),
             window,
@@ -88,6 +91,12 @@ def run():
         )
         # print(f"FPS: {round(fps, 2)}")
         pygame.display.update()
+    with open(os.getcwd() + "/config.json", "w") as fp:
+        fp.write(json.dumps({
+            **config,
+            "revert": revert,
+            "am_pm": am_pm
+        }))
 
 
 def to_screen(
@@ -134,7 +143,7 @@ def get_config(raw: str | bytes) -> dict:
     return json.loads(raw)
 
 
-def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
+def apply(config: dict, window: pygame.Surface, revert: bool, am_pm: bool) -> None:
     num_rectangles = len(config["clocks"])
     rectangles = create_surfaces(num_rectangles, window, revert)
     yes: list[pygame.Surface] = []
@@ -143,7 +152,7 @@ def apply(config: dict, window: pygame.Surface, revert: bool) -> None:
         # pygame.draw.rect(i, (255,255,255), (100 - 5, 75 - 5, w + 2 * 5, h + 2 * 5), 5)
         if "gmt" in c.lower() or "utc" in c.lower():
             c = "Etc/" + c
-        c_class = clock.Clock(c, config["am_pm"], revert)
+        c_class = clock.Clock(c, am_pm, revert)
         res = c_class.render(c_class.convert_time_to_tz(), i[0])
         yes.append(res)
     for x, pos in rectangles:
