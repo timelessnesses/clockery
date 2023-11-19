@@ -19,7 +19,7 @@ class Clock:
     def __init__(self, config: str, am_pm: bool, revert: bool) -> None:
         if config.lower() != "local":
             self.timezone = pytz.timezone(config)
-            self.name = config.capitalize()
+            self.name = config
         else:
             self.timezone = None
             self.name = "Local time"
@@ -34,17 +34,34 @@ class Clock:
         self, time: datetime.datetime, surface: pygame.Surface
     ) -> pygame.Surface:
         if not self.am_pm:
-            date = time.strftime("%H:%M:%S")
+            timer = time.strftime("%H:%M:%S")
         else:
-            date = time.strftime("%I:%M:%S %p")
+            timer = time.strftime("%I:%M:%S %p")
         middle_y = self.__get_middle(surface)
-        self.__center(date, surface, self.date_font, middle_y)
+        self.__center(timer, surface, self.date_font, middle_y)
         if self.timezone:
             offset = self.name
         else:
             offset = f"local time."
+        zone_thing = time.strftime("%z")
+        z_negative_or_positive = zone_thing[:1]
+        z_hour = zone_thing[1:3]
+        z_minute = zone_thing[3:5]
+        if z_negative_or_positive == "-":
+            zone = f"{z_hour}:{z_minute} hours behind"
+        elif z_negative_or_positive == "+":
+            zone = f"{z_hour}:{z_minute} hours forward"
+        else:
+            zone = "Local time"
+        try:
+            if int(time.strftime("%Z")) < 0 or int(time.strftime("%Z")) > 0:
+                date_thing = f"{time.strftime('%A %d/%B/%Y UTC%Z')} ({zone})"
+        except ValueError:
+            date_thing = f"{time.strftime('%A %d/%B/%Y %Z')} ({zone})"
+
         offset_middle_y = middle_y + 90
         self.__center(f"Currently {offset}", surface, self.normal_font, offset_middle_y)
+        self.__center(f"The date is {date_thing}", surface, self.normal_font, offset_middle_y + 40) # type: ignore
         return surface
 
     def __get_middle(self, surface: pygame.Surface) -> int:
@@ -58,7 +75,7 @@ class Clock:
         font: pygame.font.Font,
         y: typing.Optional[int],
     ):
-        max_width, max_height = window.get_size()
+        max_width, _ = window.get_size()
         wrapped_lines = self.__word_wrap(text, max_width, font)
 
         total_height = len(wrapped_lines) * font.get_height()
