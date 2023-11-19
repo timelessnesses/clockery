@@ -56,17 +56,22 @@ def run(fps_cap: int):
                 elif event.key == pygame.K_a:
                     am_pm = not am_pm
             elif event.type == pygame.VIDEORESIZE:
+                print("Screen resolution is being changed!",event.size)
+                w, h = event.size
+                should_change = False
+                if w < 800:
+                    print("Screen's Width is less wider than 800 pixels. Enabling Screen Changing Resolution Flag")
+                    w = 800
+                    should_change = True
+                if h < 600:
+                    print("Screen's Height is less higher than 600 pixels. Enabling Screen Changing Resolution Flag")
+                    h = 600
+                    should_change = True
+                if should_change:
+                    print("Screen resolution changed! Changing Resolution.")
+                    window = pygame.display.set_mode((w,h), flags)
+                    should_change = False
                 rectangles = create_surfaces(num_rectangles, window, revert)
-            #     w, h = event.size
-            #     should_change = False
-            #     if w < 800:
-            #         w = 800
-            #         should_change = True
-            #     elif h < 800:
-            #         h = 800
-            #         should_change = True
-            #     if should_change:
-            #         window = pygame.display.set_mode((w,h), pygame.RESIZABLE)
         fps = clock.get_fps()
         if fps >= max_fps:
             max_fps = fps
@@ -94,7 +99,7 @@ def run(fps_cap: int):
             (0, 45),
         )
         # print(f"FPS: {round(fps, 2)}")
-        pygame.display.update()
+        pygame.display.flip()
     with open(os.getcwd() + "/config.json", "w") as fp:
         fp.write(json.dumps({
             **config,
