@@ -1,7 +1,7 @@
 import json
 import os
 import typing
-
+import asyncio
 import cProfile
 import pygame
 
@@ -10,7 +10,7 @@ from . import clock
 flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
 
 
-def run(fps_cap: int):
+async def run(fps_cap: int):
     pygame.init()
 
     window = pygame.display.set_mode((800, 600), flags)  # type: ignore
@@ -99,7 +99,8 @@ def run(fps_cap: int):
             (0, 45),
         )
         # print(f"FPS: {round(fps, 2)}")
-        pygame.display.flip()
+        pygame.display.update()
+        await asyncio.sleep(0)
     with open(os.getcwd() + "/config.json", "w") as fp:
         fp.write(json.dumps({
             **config,
