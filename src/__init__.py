@@ -4,16 +4,23 @@ import typing
 
 import cProfile
 import pygame
-
+import pygame._sdl2
 from . import clock
+import os
 
-flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
+# os.environ["SDL_VIDEO_DRIVER"] = "directx"
+
+flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.SCALED # | pygame.OPENGL | pygame.OPENGLBLIT
 
 
 def run(fps_cap: int):
     pygame.init()
 
     window = pygame.display.set_mode((800, 600), flags)  # type: ignore
+    
+    screen = pygame._sdl2.Window.from_display_module()
+    screen.minimum_size = (800,600)
+    
     pygame.display.set_caption("Clockery")
     window.fill((0, 0, 0))
     pygame.font.init()
@@ -56,21 +63,6 @@ def run(fps_cap: int):
                 elif event.key == pygame.K_a:
                     am_pm = not am_pm
             elif event.type == pygame.VIDEORESIZE:
-                print("Screen resolution is being changed!",event.size)
-                w, h = event.size
-                should_change = False
-                if w < 800:
-                    print("Screen's Width is less wider than 800 pixels. Enabling Screen Changing Resolution Flag")
-                    w = 800
-                    should_change = True
-                if h < 600:
-                    print("Screen's Height is less higher than 600 pixels. Enabling Screen Changing Resolution Flag")
-                    h = 600
-                    should_change = True
-                if should_change:
-                    print("Screen resolution changed! Changing Resolution.")
-                    window = pygame.display.set_mode((w,h), flags)
-                    should_change = False
                 rectangles = create_surfaces(num_rectangles, window, revert)
         fps = clock.get_fps()
         if fps >= max_fps:
@@ -99,7 +91,7 @@ def run(fps_cap: int):
             (0, 45),
         )
         # print(f"FPS: {round(fps, 2)}")
-        pygame.display.flip()
+        pygame.display.update()
     with open(os.getcwd() + "/config.json", "w") as fp:
         fp.write(json.dumps({
             **config,
