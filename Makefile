@@ -6,4 +6,4 @@ config:
 install:
 	poetry install
 wasm:
-	poetry run pygbag --html .
+	poetry run pygbag --html --build .
