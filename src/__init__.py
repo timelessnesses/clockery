@@ -2,25 +2,31 @@ import json
 import os
 import typing
 
-import cProfile
+# import cProfile
 import pygame
 import pygame._sdl2
+
 from . import clock
-import os
 
 # os.environ["SDL_VIDEO_DRIVER"] = "directx"
 
-flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.SCALED # | pygame.OPENGL | pygame.OPENGLBLIT
+flags = (
+    pygame.RESIZABLE
+    | pygame.HWACCEL
+    | pygame.DOUBLEBUF
+    | pygame.HWSURFACE
+    | pygame.SCALED
+)  # | pygame.OPENGL | pygame.OPENGLBLIT
 
 
 def run(fps_cap: int):
     pygame.init()
 
     window = pygame.display.set_mode((800, 600), flags)  # type: ignore
-    
+
     screen = pygame._sdl2.Window.from_display_module()
-    screen.minimum_size = (800,600)
-    
+    screen.minimum_size = (800, 600)
+
     pygame.display.set_caption("Clockery")
     window.fill((0, 0, 0))
     pygame.font.init()
@@ -43,11 +49,11 @@ def run(fps_cap: int):
         with open(os.getcwd() + "/config.json") as fp:
             x = fp.read()
     finally:
-        config = get_config(x) # type: ignore
+        config = get_config(x)  # type: ignore
 
-    revert:bool = config["revert"]
+    revert: bool = config["revert"]
     am_pm: bool = config["am_pm"]
-    
+
     num_rectangles = len(config["clocks"])
     rectangles = create_surfaces(num_rectangles, window, revert)
     while running:
@@ -93,11 +99,7 @@ def run(fps_cap: int):
         # print(f"FPS: {round(fps, 2)}")
         pygame.display.update()
     with open(os.getcwd() + "/config.json", "w") as fp:
-        fp.write(json.dumps({
-            **config,
-            "revert": revert,
-            "am_pm": am_pm
-        }))
+        fp.write(json.dumps({**config, "revert": revert, "am_pm": am_pm}))
 
 
 def to_screen(
@@ -144,8 +146,13 @@ def get_config(raw: str | bytes) -> dict:
     return json.loads(raw)
 
 
-def apply(config: dict, surfaces: list[tuple[pygame.Rect, pygame.Surface]], revert: bool, am_pm: bool, window: pygame.Surface) -> None:
-
+def apply(
+    config: dict,
+    surfaces: list[tuple[pygame.Rect, pygame.Surface]],
+    revert: bool,
+    am_pm: bool,
+    window: pygame.Surface,
+) -> None:
     yes: list[pygame.Surface] = []
     # w, h = window.get_size()
     for c, i in zip(config["clocks"], surfaces):
@@ -159,20 +166,21 @@ def apply(config: dict, surfaces: list[tuple[pygame.Rect, pygame.Surface]], reve
     for pos, x in surfaces:
         window.blit(x, pos)
 
-def create_surfaces(num_corners: int, window: pygame.Surface, revert: bool) :
+
+def create_surfaces(num_corners: int, window: pygame.Surface, revert: bool):
     w, h = window.get_size()
     background_color = (0, 0, 0) if not revert else (255, 255, 255)
-    
+
     x: list[tuple[pygame.Rect, pygame.Surface]] = []
-    
+
     # Calculate the number of rows and columns needed
-    num_rows = int(num_corners ** 0.5)
+    num_rows = int(num_corners**0.5)
     num_cols = (num_corners + num_rows - 1) // num_rows
-    
+
     # Calculate the size of each surface
     surface_width = w // num_cols
     surface_height = h // num_rows
-    
+
     # Create surfaces for each corner
     for i in range(num_rows):
         for j in range(num_cols):
@@ -180,14 +188,13 @@ def create_surfaces(num_corners: int, window: pygame.Surface, revert: bool) :
             if index < num_corners:
                 s = pygame.Surface((surface_width, surface_height))
                 s.fill(background_color)
-                
+
                 # Position the surfaces
                 s_rect = s.get_rect(topleft=(surface_width * j, surface_height * i))
-                
-                x.append((s_rect, s))
-    
-    return x
 
+                x.append((s_rect, s))
+
+    return x
 
 
 def calculate_positions(num_surfaces: int, window: pygame.Surface):

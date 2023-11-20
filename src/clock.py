@@ -61,7 +61,7 @@ class Clock:
 
         offset_middle_y = middle_y + 90
         self.__center(f"Currently {offset}", surface, self.normal_font, offset_middle_y)
-        self.__center(f"The date is {date_thing}", surface, self.normal_font, offset_middle_y + 40) # type: ignore
+        self.__center(f"The date is {date_thing}", surface, self.normal_font, offset_middle_y + 40)  # type: ignore
         return surface
 
     def __get_middle(self, surface: pygame.Surface) -> int:
@@ -91,9 +91,7 @@ class Clock:
             y_centered += font.get_height()
 
     def __render_font(self, font: pygame.font.Font, text: str) -> pygame.Surface:
-        return font.render(
-            text, True, "white" if not self.revert else "black"
-        )
+        return font.render(text, True, "white" if not self.revert else "black")
 
     def __to_screen(
         self,
