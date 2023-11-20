@@ -93,12 +93,6 @@ async def run(fps_cap: int):
         # print(f"FPS: {round(fps, 2)}")
         pygame.display.update()
         await asyncio.sleep(0)
-    with open(os.getcwd() + "/config.json", "w") as fp:
-        fp.write(json.dumps({
-            **config,
-            "revert": revert,
-            "am_pm": am_pm
-        }))
 
 
 def to_screen(
