@@ -9,6 +9,7 @@ from . import clock
 
 flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
 
+thing = '{"clocks": ["local", "Australia/Sydney", "America/Argentina/Buenos_Aires", "America/Vancouver"], "am_pm": false, "revert": false, "enable_bg": true}'
 
 async def run(fps_cap: int):
     pygame.init()
@@ -27,16 +28,7 @@ async def run(fps_cap: int):
     max_fps = 0
     min_fps = 0
 
-    try:
-        with open(os.getcwd() + "/config.json") as fp:
-            x = fp.read()
-    except FileNotFoundError:
-        with open(os.getcwd() + "/config.json", "w") as fp:
-            fp.write(json.dumps({"clocks": ["local"], "am_pm": False, "revert": False}))
-        with open(os.getcwd() + "/config.json") as fp:
-            x = fp.read()
-    finally:
-        config = get_config(x) # type: ignore
+    config = get_config(thing) # type: ignore
 
     revert:bool = config["revert"]
     am_pm: bool = config["am_pm"]
