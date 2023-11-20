@@ -1,20 +1,21 @@
 import json
-import os
+# import os
 import typing
 import asyncio
-import cProfile
+# import cProfile
 import pygame
 
 from . import clock
 
-flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE
+flags = pygame.RESIZABLE | pygame.HWACCEL | pygame.DOUBLEBUF | pygame.HWSURFACE | pygame.FULLSCREEN | pygame.NOFRAME
 
 thing = '{"clocks": ["local", "Australia/Sydney", "America/Argentina/Buenos_Aires", "America/Vancouver"], "am_pm": false, "revert": false, "enable_bg": true}'
 
 async def run(fps_cap: int):
     pygame.init()
+    pygame.scrap.init()
 
-    window = pygame.display.set_mode((800, 600), flags)  # type: ignore
+    window = pygame.display.set_mode((0, 0), flags)  # type: ignore
     pygame.display.set_caption("Clockery")
     window.fill((0, 0, 0))
     pygame.font.init()
@@ -45,8 +46,22 @@ async def run(fps_cap: int):
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     revert = not revert
+                    config["revert"] = revert
                 elif event.key == pygame.K_a:
                     am_pm = not am_pm
+                    config["am_pm"] = am_pm
+                # elif event.key == pygame.K_c and event.mod & pygame.KMOD_CTRL:
+                #     pygame.scrap.put(pygame.SCRAP_TEXT, json.dumps(config).encode("utf-8"))
+                # elif event.key == pygame.K_v and event.mod & pygame.KMOD_CTRL:
+                #     settings = pygame.scrap.get(pygame.SCRAP_TEXT)
+                #     if settings:
+                #         config = get_config(settings)
+                #         revert:bool = config["revert"]
+                #         am_pm: bool = config["am_pm"]
+                #         num_rectangles = len(config["clocks"])
+                #         rectangles = create_surfaces(num_rectangles, window, revert)
+                #         continue
+                        
             elif event.type == pygame.VIDEORESIZE:
                 print("Screen resolution is being changed!",event.size)
                 w, h = event.size
