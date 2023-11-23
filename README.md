@@ -9,4 +9,4 @@ A pygame application that shows you time differences between each timezones you 
 
 ### Web (WASM)
 
-`make install` then `make wasm` the stuff will be inside `build/web` folder
+Get on `wasm` branch and `make install` then `make wasm` the stuff will be inside `build/web` folder
