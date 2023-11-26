@@ -13,7 +13,7 @@ thing = '{"clocks": ["local", "Australia/Sydney", "America/Argentina/Buenos_Aire
 
 async def run(fps_cap: int):
     pygame.init()
-    pygame.scrap.init()
+    # pygame.scrap.init()
 
     window = pygame.display.set_mode((0, 0), flags)  # type: ignore
     pygame.display.set_caption("Clockery")
