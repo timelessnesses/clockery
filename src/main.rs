@@ -1,9 +1,11 @@
+use clock::Clock;
 use sdl2;
 use serde_json;
 use std::{self, str::FromStr};
 use chrono_tz;
 mod clock;
 const FPS: i32 = 60;
+
 const NOTOSANS: &[u8; 556216] = include_bytes!("assets/NotoSans-Regular.ttf");
 const DIGITAL: &[u8; 20984] = include_bytes!("assets/digital.ttf");
 
@@ -41,9 +43,6 @@ fn main() {
 
     window.set_minimum_size(800, 600).unwrap();
     let mut canvas = window.into_canvas().build().unwrap();
-    canvas.clear();
-    canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-    canvas.present();
     let mut event_pump = ctx.event_pump().unwrap();    
 
     let running = true;
@@ -51,20 +50,12 @@ fn main() {
 
     let font_loader = sdl2::ttf::init().unwrap();
 
-    let font_file = sdl2::rwops::RWops::from_bytes(NOTOSANS).unwrap();
-    let font_file2 = sdl2::rwops::RWops::from_bytes(NOTOSANS).unwrap();
+    let date_font = font_loader.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(DIGITAL).unwrap(), 40).unwrap();
+    let normal_font = font_loader.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(NOTOSANS).unwrap(), 20).unwrap();
 
-    let date_font_file = sdl2::rwops::RWops::from_bytes(DIGITAL).unwrap();
-    let normal_font_file = sdl2::rwops::RWops::from_bytes(DIGITAL).unwrap();
-
-    let font = font_loader.load_font_from_rwops(font_file, 50).unwrap();
-    let font2 = font_loader.load_font_from_rwops(font_file2, 20).unwrap();
-
-    let date_font = font_loader.load_font_from_rwops(date_font_file, 40).unwrap();
-    let normal_font_file = font_loader.load_font_from_rwops(normal_font_file, 20).unwrap();
+    let fps_font = font_loader.load_font_from_rwops(sdl2::rwops::RWops::from_bytes(NOTOSANS).unwrap(), 10).unwrap();
 
     'running: while running {
-        canvas.clear();
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::Quit { .. }
@@ -80,8 +71,9 @@ fn main() {
                 _ => {}
             }
         }
+        clear(&mut canvas, revert);
         canvas.present();
-        clock.delay((1000 / FPS) as u32)
+        clock.delay(delay_fps(FPS))
     }
     let mut converted: Vec<String> = Vec::new();
     for e in config.clocks {
@@ -108,6 +100,56 @@ fn main() {
         }
     }
 
+
+}
+ 
+fn create_instances<'a,'b, 'c>(config: Configuration, date_font: &'c sdl2::ttf::Font<'a, 'b>, normal_font: &'c sdl2::ttf::Font<'a, 'b>) -> Vec<clock::Clock<'a, 'b, 'c>> {
+    let mut v: Vec<clock::Clock<'a, 'b, 'c>> = Vec::new();
+    for tz in config.clocks {
+        v.push(Clock::new(tz, config.am_pm, config.revert, date_font, normal_font))
+    }
+    return v
+}
+
+fn clear(window: &mut sdl2::render::Canvas<sdl2::video::Window>, revert: bool) {
+    window.set_draw_color({
+        if revert {
+            sdl2::pixels::Color::WHITE
+        } else {
+            sdl2::pixels::Color::BLACK
+        }
+    });
+    window.clear();
+} 
+fn to_screen(text: sdl2::surface::Surface, mut window: sdl2::render::Canvas<sdl2::video::Window>, dest: Option<(i32, i32)>, rect: Option<sdl2::rect::Rect>) {
+    let texture_creator = window.texture_creator();
+    let text = texture_creator.create_texture_from_surface(text).unwrap();
+    window.copy(&text, None, {
+        match (dest, rect) {
+            (Some(d), None) => {
+                let size = window.output_size().unwrap();
+                sdl2::rect::Rect::new(d.0, d.1, size.0, size.1)
+            },
+            (None, Some(r)) => {
+                r
+            },
+            _ => {
+                panic!("Unexpected");
+            }
+        }
+    }).unwrap();
+}
+
+fn render_font<'a>(font: sdl2::ttf::Font, text: &str, revert: bool) -> sdl2::surface::Surface<'a> {
+    let a = font.render(text).blended({
+        if revert {
+            sdl2::pixels::Color::BLACK
+        } else {
+            sdl2::pixels::Color::WHITE
+        }
+    }).unwrap();
+
+    return a
 
 }
 
@@ -201,4 +243,12 @@ fn create_surfaces(corners: i32, size: &(u32, u32), revert: bool) -> Vec<(sdl2::
 
 
     return x
+}
+
+fn delay_fps(fps: i32) -> u32 {
+    if fps <= 0 {
+        0
+    } else {
+        1000/fps as u32
+    }
 }
