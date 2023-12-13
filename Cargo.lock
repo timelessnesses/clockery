@@ -96,15 +96,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmake"
-version = "0.1.50"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a31c789563b815f77f4250caee12365734369f942439b7defd71e18a48197130"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "core-foundation-sys"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -193,10 +184,9 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "chrono-tz",
- "lazy_static",
- "once_cell",
  "sdl2",
  "serde_json",
+ "slicestring",
 ]
 
 [[package]]
@@ -339,7 +329,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26bcacfdd45d539fb5785049feb0038a63931aa896c7763a2a12e125ec58bd29"
 dependencies = [
  "cfg-if",
- "cmake",
  "libc",
  "pkg-config",
  "version-compare",
@@ -381,6 +370,12 @@ name = "siphasher"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "38b58827f4464d87d377d175e90bf58eb00fd8716ff0a62f80356b5e61555d0d"
+
+[[package]]
+name = "slicestring"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "84214dff6bab2662cd094e247e6b73728ff0e23111d78124146801ca18dd47b4"
 
 [[package]]
 name = "syn"
