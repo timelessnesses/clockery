@@ -305,8 +305,8 @@ fn create_surfaces<'a>(
     let mut x: Vec<(sdl2::rect::Rect, sdl2::surface::Surface)> = Vec::new();
 
     let num_rows = (corners as f64).sqrt() as i32;
-    let num_cols = corners + num_rows - 1;
-    println!("{}",num_cols);
+    let num_cols = (corners + num_rows - 1) / num_rows;
+    println!("{} {} {}",num_cols, corners, num_rows);
     let surface_width = w / (num_cols as u32);
     let surface_height = h / (num_rows as u32);
 
@@ -328,7 +328,7 @@ fn create_surfaces<'a>(
                     .unwrap();
                 let surface_rect = sdl2::rect::Rect::new(
                     surface_width as i32 * j,
-                    surface_width as i32 * i,
+                    surface_height as i32 * i,
                     surface_width,
                     surface_height,
                 );

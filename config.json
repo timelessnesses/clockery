@@ -2,7 +2,9 @@
   "am_pm": false,
   "clocks": [
     "local",
-    "Australia/Sydney"
+    "Australia/Sydney",
+    "America/Argentina/Buenos_Aires",
+    "America/Vancouver"
   ],
   "revert": false
 }

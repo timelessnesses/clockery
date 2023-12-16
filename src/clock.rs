@@ -95,8 +95,8 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
                     format!("{} {}", time.format("%A %d/%B/%Y %Z").to_string(), zone)
                 }
             };
-        self.center(format!("Currently {}", offset).as_str(), surface, self.normal_font, Some(middle_y + 90));
-        self.center(format!("The date is {}", d_thing).as_str(), surface, self.normal_font, Some(middle_y + 130));
+        self.center(format!("Currently {}", offset).as_str(), surface, self.normal_font, Some(middle_y + 70));
+        self.center(format!("The date is {}", d_thing).as_str(), surface, self.normal_font, Some(middle_y + 120));
     }
     fn center(&self, text: &str, surface: &mut sdl2::surface::Surface, font: &'c sdl2::ttf::Font<'a, 'b>, y: Option<i32>) {
         let y = match y{
@@ -134,7 +134,7 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
     fn to_screen(&self, surface: &sdl2::surface::Surface, mut target: &mut sdl2::surface::Surface, dest: Option<(i32, i32)>, rect: Option<sdl2::rect::Rect>) {
         surface.blit(None,&mut target, {
             match (dest, rect) {
-                (Some(d), None) => {
+                (Some(_), None) => {
                     let (w,h) = surface.size();
                     sdl2::rect::Rect::new(0, 0, w,h)
                 },
