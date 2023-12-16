@@ -3,13 +3,41 @@ use clock::Clock;
 use sdl2;
 use serde_json;
 use std::{self, iter::zip, str::FromStr};
+use clap::{self, Parser};
 mod clock;
-const FPS: i32 = 60;
 
 const NOTOSANS: &[u8; 556216] = include_bytes!("assets/NotoSans-Regular.ttf");
 const DIGITAL: &[u8; 20984] = include_bytes!("assets/digital.ttf");
 
+#[derive(clap::Parser)]
+#[command(author="timelessnesses", about = "Clockery, a timezone shower.")]
+struct Cli {
+    /// Frame limiting
+    #[arg(short, long)]
+    fps: Option<i64>,
+    /// List GPU renderers (for the SELECTED_GPU_RENDERER arg)
+    #[arg(short, long)]
+    list_gpu_renderers: bool,
+    /// Select your own renderer if you want to
+    #[arg(short, long)]
+    selected_gpu_renderer: Option<usize>
+}
+
 fn main() {
+    let parsed = Cli::parse();
+
+    if parsed.list_gpu_renderers {
+        for (i, item) in sdl2::render::drivers().enumerate() {
+            println!("Renderer #{}:\n   Name: {}\n  Flags: {}",i+1,item.name,item.flags)
+        }
+        return
+    }
+
+    let fl = match parsed.fps {
+        Some(f) => f,
+        None => -1,
+    };
+
     let ctx = sdl2::init().unwrap();
     let video = ctx.video().unwrap();
 
@@ -45,7 +73,13 @@ fn main() {
     let revert = config.revert;
 
     window.set_minimum_size(800, 600).unwrap();
-    let mut canvas = window.into_canvas().build().unwrap();
+    let mut canvas = match parsed.selected_gpu_renderer {
+        Some(i) => match window.into_canvas().index((i-1) as u32).build() {
+            Ok(c) => c,
+            Err(_) => panic!("Failed to initialize with your index driver provided in the argument!")
+        },
+        None => window.into_canvas().build().unwrap()
+    };
     let mut event_pump = ctx.event_pump().unwrap();
 
     let running = true;
@@ -90,13 +124,13 @@ fn main() {
                 } => break 'running,
                 sdl2::event::Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::SizeChanged(_, _) => {
-                        println!("{:#?}", canvas.output_size().unwrap());
+                        // println!("{:#?}", canvas.output_size().unwrap());
                         surfaces = create_surfaces(
                             num_surfaces,
                             canvas.output_size().unwrap(),
                             config.clone().revert,
                         );
-                        println!("Created surface!")
+                        // println!("Created surface!")
                     }
                     _ => {}
                 },
@@ -171,7 +205,7 @@ fn main() {
             lpf = fps;
             lft = std::time::Instant::now();
         }
-        clock.delay(delay_fps(-1))
+        clock.delay(delay_fps(fl as i32))
     }
     let mut converted: Vec<String> = Vec::new();
     for e in config.clone().clocks {
@@ -203,7 +237,7 @@ fn main() {
     }
 }
 
-fn create_instances<'a, 'b, 'c, 'd>(
+fn _create_instances<'a, 'b, 'c, 'd>(
     config: Configuration,
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,
@@ -320,7 +354,7 @@ fn parse_timezones(timezones: Vec<serde_json::Value>) -> Vec<Option<chrono_tz::T
 
     let mut a: Vec<Option<chrono_tz::Tz>> = Vec::new();
     for x in c {
-        println!("{}", x);
+        // println!("{}", x);
         let tz = if x.to_lowercase() == "local" {
             None
         } else {
@@ -349,7 +383,7 @@ fn create_surfaces<'a>(
 
     let num_rows = (corners as f64).sqrt() as i32;
     let num_cols = (corners + num_rows - 1) / num_rows;
-    println!("{} {} {}", num_cols, corners, num_rows);
+    // println!("{} {} {}", num_cols, corners, num_rows);
     let surface_width = w / (num_cols as u32);
     let surface_height = h / (num_rows as u32);
 
@@ -376,7 +410,7 @@ fn create_surfaces<'a>(
                     surface_height,
                 );
                 x.push((surface_rect, surface));
-                println!("{:?}", surface_rect)
+                // println!("{:?}", surface_rect)
             }
         }
     }
