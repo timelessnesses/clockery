@@ -1,16 +1,16 @@
 use chrono_tz;
+use clap::{self, Parser};
 use clock::Clock;
 use sdl2;
 use serde_json;
 use std::{self, iter::zip, str::FromStr};
-use clap::{self, Parser};
 mod clock;
 
 const NOTOSANS: &[u8; 556216] = include_bytes!("assets/NotoSans-Regular.ttf");
 const DIGITAL: &[u8; 20984] = include_bytes!("assets/digital.ttf");
 
 #[derive(clap::Parser)]
-#[command(author="timelessnesses", about = "Clockery, a timezone shower.")]
+#[command(author = "timelessnesses", about = "Clockery, a timezone shower.")]
 struct Cli {
     /// Frame limiting
     #[arg(short, long)]
@@ -20,7 +20,7 @@ struct Cli {
     list_gpu_renderers: bool,
     /// Select your own renderer if you want to
     #[arg(short, long)]
-    selected_gpu_renderer: Option<usize>
+    selected_gpu_renderer: Option<usize>,
 }
 
 fn main() {
@@ -28,9 +28,14 @@ fn main() {
 
     if parsed.list_gpu_renderers {
         for (i, item) in sdl2::render::drivers().enumerate() {
-            println!("Renderer #{}:\n   Name: {}\n  Flags: {}",i+1,item.name,item.flags)
+            println!(
+                "Renderer #{}:\n   Name: {}\n  Flags: {}",
+                i + 1,
+                item.name,
+                item.flags
+            )
         }
-        return
+        return;
     }
 
     let fl = match parsed.fps {
@@ -74,11 +79,13 @@ fn main() {
 
     window.set_minimum_size(800, 600).unwrap();
     let mut canvas = match parsed.selected_gpu_renderer {
-        Some(i) => match window.into_canvas().index((i-1) as u32).build() {
+        Some(i) => match window.into_canvas().index((i - 1) as u32).build() {
             Ok(c) => c,
-            Err(_) => panic!("Failed to initialize with your index driver provided in the argument!")
+            Err(_) => {
+                panic!("Failed to initialize with your index driver provided in the argument!")
+            }
         },
-        None => window.into_canvas().build().unwrap()
+        None => window.into_canvas().build().unwrap(),
     };
     let mut event_pump = ctx.event_pump().unwrap();
 
