@@ -1,0 +1,24 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "rust" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: install vcpkg plugin
+      run: cargo install cargo-vcpkg 
+    - name: build libs
+      run: cargo vcpkg -v build
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
