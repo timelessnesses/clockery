@@ -2,7 +2,7 @@ use chrono_tz;
 use clock::Clock;
 use sdl2;
 use serde_json;
-use std::{self, str::FromStr, iter::zip};
+use std::{self, str::FromStr, iter::zip, os::fd::AsFd};
 mod clock;
 const FPS: i32 = 60;
 
@@ -22,11 +22,14 @@ fn main() {
         // .opengl()
         .build()
         .unwrap();
-    let config = std::fs::File::options()
-        .read(true)
-        .write(true)
-        .open("./config.json")
-        .or(std::fs::File::create("./config.json"));
+    let config = std::fs::read_to_string("./config.json").or(
+        {
+            match std::fs::File::create("./config.json") {
+                Ok(_) => Ok("".to_string()),
+                Err(e) => Err(e)
+            }
+        }
+    );
     let config = match config {
         Ok(c) => {
             load_config(c) // being dropped lmao
@@ -37,7 +40,8 @@ fn main() {
     };
 
     let num_surfaces = config.clocks.len() as i32;
-    let mut surfaces = create_surfaces(num_surfaces, &window.size(), config.revert);
+    let size = window.size();
+    let mut surfaces = create_surfaces(num_surfaces, size, config.revert);
 
     let am_pm = config.am_pm;
     let revert = config.revert;
@@ -68,9 +72,6 @@ fn main() {
 
 
     // let copied = &config;    
-    let cloned = config.clone();
-    let applied = apply(cloned, surfaces, &mut canvas, &date_font, &normal_font);
-    
     let mut ft = std::time::Instant::now();
     let mut fc = 0;
     let mut fps = 0.0;
@@ -80,6 +81,8 @@ fn main() {
     let mut lf = 0.0;
     let mut lpf = 0.0;
     let mut lft = std::time::Instant::now();
+
+    let cloned_config = config.clone();
     'running: while running {
         for event in event_pump.poll_iter() {
             match event {
@@ -88,15 +91,26 @@ fn main() {
                     keycode: Some(sdl2::keyboard::Keycode::Escape),
                     ..
                 } => break 'running,
+                sdl2::event::Event::Window {win_event, ..} => {
+                    match win_event {
+                        sdl2::event::WindowEvent::SizeChanged(_,_) => {
+                            println!("{:#?}", canvas.output_size().unwrap());
+                            surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), config.clone().revert);
+                            println!("Created surface!")
+                        },
+                        _ => {}
+                    }
+                },
                 _ => {}
             }
         }
         clear(&mut canvas, revert);
+        apply(&config.clocks, config.am_pm, config.revert, &mut surfaces, &mut canvas, &date_font, &normal_font);
         center("Clockery", &mut canvas, &head_font, Some(100), revert);
         to_screen(&render_font(&fps_font, format_args!("FPS: {}", truncate(fps, 2)).to_string().as_str(), revert), &mut canvas, Some((0,0)), None);
         to_screen(&render_font(&fps_font, format_args!("Max FPS: {}", truncate(mf, 2)).to_string().as_str(), revert), &mut canvas, Some((0,15)), None);
         to_screen(&render_font(&fps_font, format_args!("Min FPS: {}", truncate(lf, 2)).to_string().as_str(), revert), &mut canvas, Some((0,30)), None);
-        // apply(config)
+        // apply(config.clone(), &mut surfaces, &mut canvas, &date_font, &normal_font);
         canvas.present();
         // unsafe {canvas.render_flush();}
         fc += 1;
@@ -117,10 +131,10 @@ fn main() {
             lpf = fps;
             lft = std::time::Instant::now();
         }
-        // clock.delay(delay_fps(FPS))
+        clock.delay(delay_fps(-1))
     }
     let mut converted: Vec<String> = Vec::new();
-    for e in config.clocks {
+    for e in config.clone().clocks {
         if e.is_none() {
             converted.push("local".to_owned());
             continue;
@@ -132,7 +146,6 @@ fn main() {
         .read(true)
         .write(true)
         .open("./config.json")
-        .or(std::fs::File::create("./config.json"))
     {
         Ok(f) => {
             let v = serde_json::json!(
@@ -224,17 +237,19 @@ struct Configuration {
     pub revert: bool,
 }
 
-fn load_config(file: std::fs::File) -> Configuration {
-    let config: Result<serde_json::Value, serde_json::Error> = serde_json::from_reader(&file);
+fn load_config(con: String) -> Configuration {
+    let config: Result<serde_json::Value, serde_json::Error> = serde_json::from_str(&con);
 
     let config = match config {
         Ok(values) => values,
         Err(_) => {
+            // panic!("{:?}", p);
             let write = serde_json::json!({
                 "clocks": ["local"],
                 "revert": false,
                 "am_pm": false
             });
+            let file = std::fs::File::options().write(true).open("./config.json").unwrap();
             serde_json::to_writer_pretty(&file, &write)
                 .expect("Failed to write default configuration to a file.");
             write
@@ -245,7 +260,7 @@ fn load_config(file: std::fs::File) -> Configuration {
     let am_pm: bool = config["am_pm"].as_bool().unwrap();
     let revert: bool = config["revert"].as_bool().unwrap();
 
-    drop(file);
+    // drop(file);
 
     return Configuration {
         clocks: clocks,
@@ -262,6 +277,7 @@ fn parse_timezones(timezones: Vec<serde_json::Value>) -> Vec<Option<chrono_tz::T
 
     let mut a: Vec<Option<chrono_tz::Tz>> = Vec::new();
     for x in c {
+        println!("{}",x);
         let tz = if x.to_lowercase() == "local" {
             None
         } else {
@@ -280,17 +296,17 @@ fn parse_timezones(timezones: Vec<serde_json::Value>) -> Vec<Option<chrono_tz::T
 
 fn create_surfaces<'a>(
     corners: i32,
-    size: &(u32, u32),
+    size: (u32, u32),
     revert: bool,
-) -> Vec<(sdl2::rect::Rect, &mut sdl2::surface::Surface<'a>)> {
+) -> Vec<(sdl2::rect::Rect, sdl2::surface::Surface<'a>)> {
     let (w, h) = size;
     let bg_color = if revert { (0, 0, 0) } else { (255, 255, 255) };
 
-    let mut x: Vec<(sdl2::rect::Rect, &mut sdl2::surface::Surface)> = Vec::new();
+    let mut x: Vec<(sdl2::rect::Rect, sdl2::surface::Surface)> = Vec::new();
 
     let num_rows = (corners as f64).sqrt() as i32;
     let num_cols = corners + num_rows - 1;
-
+    println!("{}",num_cols);
     let surface_width = w / (num_cols as u32);
     let surface_height = h / (num_rows as u32);
 
@@ -316,7 +332,8 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                x.push((surface_rect, &mut surface))
+                x.push((surface_rect, surface));
+                println!("{:?}", surface_rect)
             }
         }
     }
@@ -378,14 +395,17 @@ fn truncate(b: f64, precision: usize) -> f64 {
     f64::trunc(b * ((10 * precision) as f64)) / ((10 * precision) as f64)
 }
 
-fn apply<'a,'b,'c>(config: Configuration, surfaces: Vec<(sdl2::rect::Rect, &mut sdl2::surface::Surface)>, renderer: &mut sdl2::render::Canvas<sdl2::video::Window>, date_font: &'c sdl2::ttf::Font<'a, 'b>, normal_font: &'c sdl2::ttf::Font<'a, 'b>) {
-    for (c, mut i) in zip(config.clocks, &surfaces) {
-        let clocker = clock::Clock::new(c, config.am_pm, config.revert, date_font, normal_font);
-        clear_surface(i.1, config.revert);
-        clocker.render(clocker.current_datetime_in_timezone(), i.1);
+fn apply<'a,'b,'c>(clock: &Vec<Option<chrono_tz::Tz>>, am_pm: bool, revert: bool, surfaces: &mut Vec<(sdl2::rect::Rect, sdl2::surface::Surface)>, renderer: &mut sdl2::render::Canvas<sdl2::video::Window>, date_font: &'c sdl2::ttf::Font<'a, 'b>, normal_font: &'c sdl2::ttf::Font<'a, 'b>) {
+    let mut j: Vec<(sdl2::rect::Rect, &sdl2::surface::Surface)> = Vec::new();
+    for (c, i) in zip(clock, surfaces) {
+        let clocker = clock::Clock::new(*c, am_pm, revert, date_font, normal_font);
+        clear_surface(&mut i.1, revert);
+        clocker.render(clocker.current_datetime_in_timezone(), &mut i.1);
+        j.push((i.0, &i.1))
     }
-    for (rect, surface) in surfaces {
-        to_screen(&surface, renderer, None, Some(&rect))
+    for (rect, surface) in j {
+        to_screen(&surface, renderer, None, Some(&rect));
+        // println!("{:?}", rect);
     }
 }
 
