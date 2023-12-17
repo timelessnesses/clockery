@@ -61,7 +61,7 @@ fn main() {
             Err(e) => Err(e),
         }
     });
-    let config = match config {
+    let mut config = match config {
         Ok(c) => {
             load_config(c) // being dropped lmao
         }
@@ -70,12 +70,12 @@ fn main() {
         }
     };
 
-    let num_surfaces = config.clocks.len() as i32;
+    let mut num_surfaces = config.clocks.len() as i32;
     let size = window.size();
     let mut surfaces = create_surfaces(num_surfaces, size, config.revert);
 
-    let am_pm = config.am_pm;
-    let revert = config.revert;
+    let mut am_pm = config.am_pm;
+    let mut revert = config.revert;
 
     window.set_minimum_size(800, 600).unwrap();
     let mut canvas = match parsed.selected_gpu_renderer {
@@ -129,6 +129,22 @@ fn main() {
                     keycode: Some(sdl2::keyboard::Keycode::Escape),
                     ..
                 } => break 'running,
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(sdl2::keyboard::Keycode::R),
+                    ..
+                } => revert = !revert,
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(sdl2::keyboard::Keycode::A),
+                    ..
+                } => am_pm = !am_pm,
+                sdl2::event::Event::KeyDown{ keycode: Some(sdl2::keyboard::Keycode::Q), .. } => {
+                    let content = std::fs::read_to_string("./config.json").expect("Cannot read the file");
+                    config = load_config(content);
+                    am_pm = config.am_pm;
+                    revert = config.revert;
+                    num_surfaces = config.clocks.len() as i32;
+                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert);
+                },
                 sdl2::event::Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::SizeChanged(_, _) => {
                         // println!("{:#?}", canvas.output_size().unwrap());
@@ -147,8 +163,8 @@ fn main() {
         clear(&mut canvas, revert);
         apply(
             &config.clocks,
-            config.am_pm,
-            config.revert,
+            am_pm,
+            revert,
             &mut surfaces,
             &mut canvas,
             &date_font,
@@ -279,7 +295,10 @@ fn to_screen(
     rect: Option<&sdl2::rect::Rect>,
 ) {
     let texture_creator = window.texture_creator();
-    let text = texture_creator.create_texture_from_surface(text).unwrap();
+    let text = match texture_creator.create_texture_from_surface(text) {
+        Ok(t) => t,
+        Err(_) => return
+    };
     window
         .copy(&text, None, {
             match (dest, rect) {

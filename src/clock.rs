@@ -9,7 +9,7 @@ pub struct Clock<'a, 'b, 'c, 'd> {
     revert: bool,
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,
-    markery: &'d str, // used for 'd for the surface
+    markery: std::marker::PhantomData<&'d str>, // used for 'd for the surface
 }
 
 impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
@@ -34,17 +34,22 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             revert,
             date_font,
             normal_font,
-            markery: "s",
+            markery: std::marker::PhantomData,
         };
     }
 
     pub fn current_datetime_in_timezone(&self) -> chrono::DateTime<chrono::FixedOffset> {
         match self.timezone {
-            Some(tz) => tz
-                .from_local_datetime(&chrono::Local::now().naive_local())
-                .unwrap()
-                .fixed_offset(),
-            None => chrono::Local::now().fixed_offset(),
+            Some(tz) => {
+                // println!("It has timezone");
+                tz.from_utc_datetime(&chrono::Utc::now().naive_utc())
+                    // .unwrap()
+                    .fixed_offset()
+            }
+            None => {
+                // println!("It's none");
+                chrono::Local::now().fixed_offset()
+            }
         }
     }
 
