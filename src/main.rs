@@ -137,14 +137,18 @@ fn main() {
                     keycode: Some(sdl2::keyboard::Keycode::A),
                     ..
                 } => am_pm = !am_pm,
-                sdl2::event::Event::KeyDown{ keycode: Some(sdl2::keyboard::Keycode::Q), .. } => {
-                    let content = std::fs::read_to_string("./config.json").expect("Cannot read the file");
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(sdl2::keyboard::Keycode::Q),
+                    ..
+                } => {
+                    let content =
+                        std::fs::read_to_string("./config.json").expect("Cannot read the file");
                     config = load_config(content);
                     am_pm = config.am_pm;
                     revert = config.revert;
                     num_surfaces = config.clocks.len() as i32;
                     surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert);
-                },
+                }
                 sdl2::event::Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::SizeChanged(_, _) => {
                         // println!("{:#?}", canvas.output_size().unwrap());
@@ -297,7 +301,7 @@ fn to_screen(
     let texture_creator = window.texture_creator();
     let text = match texture_creator.create_texture_from_surface(text) {
         Ok(t) => t,
-        Err(_) => return
+        Err(_) => return,
     };
     window
         .copy(&text, None, {
