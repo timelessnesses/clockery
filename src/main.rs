@@ -406,11 +406,19 @@ fn create_surfaces<'a>(
     corners: i32,
     size: (u32, u32),
     revert: bool,
-) -> Vec<(sdl2::rect::Rect, sdl2::surface::Surface<'a>, snow::SnowParticles)> {
+) -> Vec<(
+    sdl2::rect::Rect,
+    sdl2::surface::Surface<'a>,
+    snow::SnowParticles,
+)> {
     let (w, h) = size;
     let bg_color = if revert { (0, 0, 0) } else { (255, 255, 255) };
 
-    let mut x: Vec<(sdl2::rect::Rect, sdl2::surface::Surface, snow::SnowParticles)> = Vec::new();
+    let mut x: Vec<(
+        sdl2::rect::Rect,
+        sdl2::surface::Surface,
+        snow::SnowParticles,
+    )> = Vec::new();
 
     let num_rows = (corners as f64).sqrt() as i32;
     let num_cols = (corners + num_rows - 1) / num_rows;
@@ -508,7 +516,11 @@ fn apply<'a, 'b, 'c>(
     clock: &Vec<Option<chrono_tz::Tz>>,
     am_pm: bool,
     revert: bool,
-    surfaces: &mut Vec<(sdl2::rect::Rect, sdl2::surface::Surface, snow::SnowParticles)>,
+    surfaces: &mut Vec<(
+        sdl2::rect::Rect,
+        sdl2::surface::Surface,
+        snow::SnowParticles,
+    )>,
     renderer: &mut sdl2::render::Canvas<sdl2::video::Window>,
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,

@@ -1,7 +1,7 @@
+use crate::snow;
 use chrono::{self, TimeZone};
 use sdl2;
 use slicestring::Slice;
-use crate::snow;
 
 // use crate::snow;
 
@@ -13,7 +13,7 @@ pub struct Clock<'a, 'b, 'c, 'd> {
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,
     markery: std::marker::PhantomData<&'d str>, // used for 'd for the surface
-    // snow: snow::SnowParticles,
+                                                // snow: snow::SnowParticles,
 }
 
 impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
