@@ -1,11 +1,10 @@
 {
-  "am_pm": true,
+  "am_pm": false,
   "clocks": [
     "local",
-    "Australia/Sydney",
-    "America/Vancouver",
     "America/Argentina/Buenos_Aires",
-    "Asia/Bangkok"
+    "Australia/Melbourne",
+    "America/Vancouver"
   ],
   "revert": false
 }

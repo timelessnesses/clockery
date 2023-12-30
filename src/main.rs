@@ -5,6 +5,7 @@ use sdl2;
 use serde_json;
 use std::{self, iter::zip, str::FromStr};
 mod clock;
+mod snow;
 
 const NOTOSANS: &[u8; 556216] = include_bytes!("assets/NotoSans-Regular.ttf");
 const DIGITAL: &[u8; 20984] = include_bytes!("assets/digital.ttf");
@@ -120,7 +121,7 @@ fn main() {
     let mut lpf = 0.0;
     let mut lft = std::time::Instant::now();
 
-    let _cloned_config = config.clone();
+    // let _cloned_config = config.clone();
     'running: while running {
         for event in event_pump.poll_iter() {
             match event {
@@ -405,11 +406,11 @@ fn create_surfaces<'a>(
     corners: i32,
     size: (u32, u32),
     revert: bool,
-) -> Vec<(sdl2::rect::Rect, sdl2::surface::Surface<'a>)> {
+) -> Vec<(sdl2::rect::Rect, sdl2::surface::Surface<'a>, snow::SnowParticles)> {
     let (w, h) = size;
     let bg_color = if revert { (0, 0, 0) } else { (255, 255, 255) };
 
-    let mut x: Vec<(sdl2::rect::Rect, sdl2::surface::Surface)> = Vec::new();
+    let mut x: Vec<(sdl2::rect::Rect, sdl2::surface::Surface, snow::SnowParticles)> = Vec::new();
 
     let num_rows = (corners as f64).sqrt() as i32;
     let num_cols = (corners + num_rows - 1) / num_rows;
@@ -439,7 +440,8 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                x.push((surface_rect, surface));
+                let s = snow::SnowParticles::new(20, &mut surface, revert);
+                x.push((surface_rect, surface, s));
                 // println!("{:?}", surface_rect)
             }
         }
@@ -506,7 +508,7 @@ fn apply<'a, 'b, 'c>(
     clock: &Vec<Option<chrono_tz::Tz>>,
     am_pm: bool,
     revert: bool,
-    surfaces: &mut Vec<(sdl2::rect::Rect, sdl2::surface::Surface)>,
+    surfaces: &mut Vec<(sdl2::rect::Rect, sdl2::surface::Surface, snow::SnowParticles)>,
     renderer: &mut sdl2::render::Canvas<sdl2::video::Window>,
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,
@@ -515,7 +517,7 @@ fn apply<'a, 'b, 'c>(
     for (c, i) in zip(clock, surfaces) {
         let clocker = clock::Clock::new(*c, am_pm, revert, date_font, normal_font);
         clear_surface(&mut i.1, revert);
-        clocker.render(clocker.current_datetime_in_timezone(), &mut i.1);
+        clocker.render(clocker.current_datetime_in_timezone(), &mut i.1, &mut i.2);
         j.push((i.0, &i.1))
     }
     for (rect, surface) in j {

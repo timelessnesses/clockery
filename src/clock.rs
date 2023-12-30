@@ -1,6 +1,9 @@
-use chrono::{self, TimeZone};
+use chrono::{self, TimeZone, Datelike};
 use sdl2;
 use slicestring::Slice;
+use crate::snow;
+
+// use crate::snow;
 
 pub struct Clock<'a, 'b, 'c, 'd> {
     timezone: Option<chrono_tz::Tz>,
@@ -10,6 +13,7 @@ pub struct Clock<'a, 'b, 'c, 'd> {
     date_font: &'c sdl2::ttf::Font<'a, 'b>,
     normal_font: &'c sdl2::ttf::Font<'a, 'b>,
     markery: std::marker::PhantomData<&'d str>, // used for 'd for the surface
+    // snow: snow::SnowParticles,
 }
 
 impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
@@ -57,6 +61,7 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
         &self,
         time: chrono::DateTime<chrono::FixedOffset>,
         surface: &mut sdl2::surface::Surface,
+        snow_particle: &mut snow::SnowParticles,
     ) {
         let timer = {
             if !self.am_pm {
@@ -113,6 +118,7 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             self.normal_font,
             Some(middle_y + 120),
         );
+        snow_particle.render(surface, self.revert);
     }
     fn center(
         &self,
