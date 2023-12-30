@@ -440,7 +440,7 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                let s = snow::SnowParticles::new(20, &mut surface, revert);
+                let s = snow::SnowParticles::new(20, &mut surface);
                 x.push((surface_rect, surface, s));
                 // println!("{:?}", surface_rect)
             }

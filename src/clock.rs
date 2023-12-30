@@ -1,4 +1,4 @@
-use chrono::{self, TimeZone, Datelike};
+use chrono::{self, TimeZone};
 use sdl2;
 use slicestring::Slice;
 use crate::snow;
