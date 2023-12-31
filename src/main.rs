@@ -1,3 +1,4 @@
+// #![windows_subsystem = "windows"]
 use chrono_tz;
 use clap::{self, Parser};
 use clock::Clock;
@@ -448,7 +449,7 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                let s = snow::SnowParticles::new(20, &mut surface);
+                let s = snow::SnowParticles::new(100, &mut surface);
                 x.push((surface_rect, surface, s));
                 // println!("{:?}", surface_rect)
             }

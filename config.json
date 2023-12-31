@@ -1,5 +1,5 @@
 {
-  "am_pm": false,
+  "am_pm": true,
   "clocks": [
     "local",
     "America/Argentina/Buenos_Aires",
