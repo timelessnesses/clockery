@@ -6,5 +6,7 @@
     "Australia/Melbourne",
     "America/Vancouver"
   ],
-  "revert": false
+  "revert": false,
+  "snow_enable": true,
+  "snow_limit": 0
 }

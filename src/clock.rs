@@ -1,8 +1,8 @@
 use crate::snow;
-use chrono::{self, TimeZone};
+use chrono::{self, TimeZone, Datelike};
 use sdl2;
 use slicestring::Slice;
-
+// use humantime;
 // use crate::snow;
 
 pub struct Clock<'a, 'b, 'c, 'd> {
@@ -63,6 +63,12 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
         surface: &mut sdl2::surface::Surface,
         snow_particle: &mut snow::SnowParticles,
     ) {
+
+        let utcized = time.naive_local();
+        let new_year = chrono::NaiveDate::from_ymd_opt(utcized.year() + 1, 1, 1).unwrap();
+        let time_new_year = chrono::NaiveTime::from_hms_opt(0,0,0).unwrap();
+        let built = chrono::NaiveDateTime::new(new_year, time_new_year);
+
         let timer = {
             if !self.am_pm {
                 time.format("%H:%M:%S").to_string()
@@ -74,7 +80,7 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             let (_, h) = surface.size();
             (h / 2) as i32
         };
-        self.center(&timer, surface, self.date_font, Some(middle_y));
+        self.center(&timer, surface, self.date_font, Some(middle_y - 100));
         let offset: &str;
         if self.timezone.is_some() {
             offset = &self.name
@@ -110,16 +116,76 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             format!("Currently {}", offset).as_str(),
             surface,
             self.normal_font,
-            Some(middle_y + 70),
+            Some(middle_y + 20),
         );
         self.center(
             format!("The date is {}", d_thing).as_str(),
             surface,
             self.normal_font,
-            Some(middle_y + 120),
+            Some(middle_y + 70),
         );
+        let left = built - utcized;
+        
+        // let formatted = humantime::format_duration(left.to_std().unwrap()).to_string();
+        let formatted = self.formatter(left);
+        
+        self.center(
+            formatted.as_str(),
+            surface,
+            self.normal_font,
+            Some(middle_y + 120)
+        );
+
         snow_particle.render(surface, self.revert);
     }
+
+    fn formatter(
+        &self, left: chrono::Duration
+    ) -> String {
+        let stded = left.to_std().unwrap();
+        let seconds = stded.as_secs() as i64;
+        let nanoseconds = stded.subsec_millis();
+
+        let years = seconds / (365 * 24 * 60 * 60);
+        let remaining_seconds = seconds % (365 * 24 * 60 * 60);
+
+        let months = remaining_seconds / (30 * 24 * 60 * 60);
+        let remaining_seconds = remaining_seconds % (30 * 24 * 60 * 60);
+
+        let weeks = remaining_seconds / (7 * 24 * 60 * 60);
+        let remaining_seconds = remaining_seconds % (7 * 24 * 60 * 60);
+
+        let days = remaining_seconds / (24 * 60 * 60);
+        let remaining_seconds = remaining_seconds % (24 * 60 * 60);
+
+        let hours = remaining_seconds / 3600;
+        let remaining_seconds = remaining_seconds % 3600;
+
+        let minutes = remaining_seconds / 60;
+        let remaining_seconds = remaining_seconds % 60;
+
+        let mut build = String::new();
+        build += "New years: ";
+
+        if left.num_hours() <= 12{ // new year 12 hours left
+            if years != 0 {
+                build += format!("{} years, ", years).as_str();
+            }
+            if months != 0 {
+                build += format!("{} months, ", months).as_str();
+            }
+            if weeks != 0 {
+                build += format!("{} weeks, ", weeks).as_str();
+            }
+            if days != 0 {
+                build += format!("{} days, ", days).as_str();
+            }
+            build += format!("{} hours, {} minutes, {} seconds, {} miliseconds", hours, minutes, remaining_seconds, nanoseconds).as_str();
+            return build
+        }
+        return "".to_string()
+    }
+
     fn center(
         &self,
         text: &str,

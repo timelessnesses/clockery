@@ -74,7 +74,15 @@ fn main() {
 
     let mut num_surfaces = config.clocks.len() as i32;
     let size = window.size();
-    let mut surfaces = create_surfaces(num_surfaces, size, config.revert);
+    let mut snow_enable = config.snow_enable;
+    let snow_limit = {
+        if snow_enable {
+            config.snow_limit
+        } else {
+            0
+        }
+    };
+    let mut surfaces = create_surfaces(num_surfaces, size, config.revert, snow_limit);
 
     let mut am_pm = config.am_pm;
     let mut revert = config.revert;
@@ -149,8 +157,21 @@ fn main() {
                     am_pm = config.am_pm;
                     revert = config.revert;
                     num_surfaces = config.clocks.len() as i32;
-                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert);
-                }
+                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, snow_limit);
+                },
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(sdl2::keyboard::Keycode::S),
+                    ..
+                } => {
+                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                        snow_enable = !snow_enable;
+                        if snow_enable {
+                            config.snow_limit
+                        } else {
+                            0
+                        }
+                    });
+                },
                 sdl2::event::Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::SizeChanged(_, _) => {
                         // println!("{:#?}", canvas.output_size().unwrap());
@@ -158,6 +179,7 @@ fn main() {
                             num_surfaces,
                             canvas.output_size().unwrap(),
                             config.clone().revert,
+                            snow_limit
                         );
                         // println!("Created surface!")
                     }
@@ -255,7 +277,9 @@ fn main() {
                 {
                     "clocks": converted,
                     "am_pm": am_pm,
-                    "revert": revert
+                    "revert": revert,
+                    "snow_enable": snow_enable,
+                    "snow_limit": config.snow_limit
                 }
             );
             serde_json::to_writer_pretty(f, &v).expect("Failed to save configuration");
@@ -341,6 +365,8 @@ struct Configuration {
     pub clocks: Vec<Option<chrono_tz::Tz>>,
     pub am_pm: bool,
     pub revert: bool,
+    pub snow_limit: i64,
+    pub snow_enable: bool,
 }
 
 fn load_config(con: String) -> Configuration {
@@ -368,13 +394,17 @@ fn load_config(con: String) -> Configuration {
     let clocks = parse_timezones(config["clocks"].as_array().unwrap().to_owned());
     let am_pm: bool = config["am_pm"].as_bool().unwrap();
     let revert: bool = config["revert"].as_bool().unwrap();
+    let snow_limit = config["snow_limit"].as_i64().unwrap();
+    let snow_enable = config["snow_enable"].as_bool().unwrap();
 
     // drop(file);
 
     return Configuration {
-        clocks: clocks,
-        am_pm: am_pm,
-        revert: revert,
+        clocks,
+        am_pm,
+        revert,
+        snow_enable,
+        snow_limit
     };
 }
 
@@ -407,6 +437,7 @@ fn create_surfaces<'a>(
     corners: i32,
     size: (u32, u32),
     revert: bool,
+    snow_limit: i64
 ) -> Vec<(
     sdl2::rect::Rect,
     sdl2::surface::Surface<'a>,
@@ -449,7 +480,7 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                let s = snow::SnowParticles::new(100, &mut surface);
+                let s = snow::SnowParticles::new((snow_limit / corners as i64) as i32, &mut surface);
                 x.push((surface_rect, surface, s));
                 // println!("{:?}", surface_rect)
             }
