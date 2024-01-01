@@ -5,6 +5,7 @@ use clock::Clock;
 use sdl2;
 use serde_json;
 use std::{self, iter::zip, str::FromStr};
+use ctrlc;
 mod clock;
 mod snow;
 
@@ -99,7 +100,7 @@ fn main() {
     };
     let mut event_pump = ctx.event_pump().unwrap();
 
-    let running = true;
+    let mut running = true;
     let clock = ctx.timer().unwrap();
 
     let font_loader = sdl2::ttf::init().unwrap();
@@ -131,6 +132,9 @@ fn main() {
     let mut lft = std::time::Instant::now();
 
     // let _cloned_config = config.clone();
+    ctrlc::set_handler(move || {
+        running = !running;
+    }).expect("Failed to set CTRL+C handler for whatever reason");
     'running: while running {
         for event in event_pump.poll_iter() {
             match event {
@@ -157,7 +161,14 @@ fn main() {
                     am_pm = config.am_pm;
                     revert = config.revert;
                     num_surfaces = config.clocks.len() as i32;
-                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, snow_limit);
+                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                        // snow_enable = !snow_enable;
+                        if snow_enable {
+                            config.snow_limit
+                        } else {
+                            0
+                        }
+                    });
                 },
                 sdl2::event::Event::KeyDown {
                     keycode: Some(sdl2::keyboard::Keycode::S),
@@ -175,12 +186,14 @@ fn main() {
                 sdl2::event::Event::Window { win_event, .. } => match win_event {
                     sdl2::event::WindowEvent::SizeChanged(_, _) => {
                         // println!("{:#?}", canvas.output_size().unwrap());
-                        surfaces = create_surfaces(
-                            num_surfaces,
-                            canvas.output_size().unwrap(),
-                            config.clone().revert,
-                            snow_limit
-                        );
+                        surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                            // snow_enable = !snow_enable;
+                            if snow_enable {
+                                config.snow_limit
+                            } else {
+                                0
+                            }
+                        });
                         // println!("Created surface!")
                     }
                     _ => {}
@@ -379,7 +392,9 @@ fn load_config(con: String) -> Configuration {
             let write = serde_json::json!({
                 "clocks": ["local"],
                 "revert": false,
-                "am_pm": false
+                "am_pm": false,
+                "snow_enable": false,
+                "snow_limit": 200
             });
             let file = std::fs::File::options()
                 .write(true)

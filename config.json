@@ -8,5 +8,5 @@
   ],
   "revert": false,
   "snow_enable": true,
-  "snow_limit": 0
+  "snow_limit": 200
 }

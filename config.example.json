@@ -1,0 +1,10 @@
+
+{
+    "am_pm": true,
+    "clocks": [
+        "local"
+    ],
+    "revert": false,
+    "snow_enable": true,
+    "snow_limit": 200
+}
