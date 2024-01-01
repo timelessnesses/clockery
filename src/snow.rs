@@ -17,7 +17,7 @@ impl Snowflake {
     pub fn new(w: i32, h: i32, size: i32) -> Self {
         let mut rng = rand::thread_rng();
         return Snowflake {
-            x: rng.gen_range(0..w+10),
+            x: rng.gen_range(0..w + 10),
             y: -2,
             speed: rng.gen_range(1..4),
             window_height: h,

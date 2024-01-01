@@ -2,12 +2,15 @@
 use chrono_tz;
 use clap::{self, Parser};
 use clock::Clock;
+use ctrlc;
 use sdl2;
 use serde_json;
 use std::{self, iter::zip, str::FromStr};
-use ctrlc;
 mod clock;
 mod snow;
+
+#[cfg(target_os = "windows")]
+use winapi;
 
 const NOTOSANS: &[u8; 556216] = include_bytes!("assets/NotoSans-Regular.ttf");
 const DIGITAL: &[u8; 20984] = include_bytes!("assets/digital.ttf");
@@ -26,9 +29,22 @@ struct Cli {
     selected_gpu_renderer: Option<usize>,
 }
 
-fn main() {
-    let parsed = Cli::parse();
+#[cfg(target_os = "windows")]
+fn hide_console() {
+    // use winapi;
+    unsafe {
+        let cw = winapi::um::wincon::GetConsoleWindow();
+        if cw != std::ptr::null_mut() {
+            winapi::um::winuser::ShowWindow(cw, winapi::um::winuser::SW_HIDE);
+        }
+    }
+}
 
+fn main() {
+    #[cfg(target_os = "windows")]
+    hide_console();
+
+    let parsed = Cli::parse();
     if parsed.list_gpu_renderers {
         for (i, item) in sdl2::render::drivers().enumerate() {
             println!(
@@ -134,7 +150,8 @@ fn main() {
     // let _cloned_config = config.clone();
     ctrlc::set_handler(move || {
         running = !running;
-    }).expect("Failed to set CTRL+C handler for whatever reason");
+    })
+    .expect("Failed to set CTRL+C handler for whatever reason");
     'running: while running {
         for event in event_pump.poll_iter() {
             match event {
@@ -161,32 +178,8 @@ fn main() {
                     am_pm = config.am_pm;
                     revert = config.revert;
                     num_surfaces = config.clocks.len() as i32;
-                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
-                        // snow_enable = !snow_enable;
-                        if snow_enable {
-                            config.snow_limit
-                        } else {
-                            0
-                        }
-                    });
-                },
-                sdl2::event::Event::KeyDown {
-                    keycode: Some(sdl2::keyboard::Keycode::S),
-                    ..
-                } => {
-                    surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
-                        snow_enable = !snow_enable;
-                        if snow_enable {
-                            config.snow_limit
-                        } else {
-                            0
-                        }
-                    });
-                },
-                sdl2::event::Event::Window { win_event, .. } => match win_event {
-                    sdl2::event::WindowEvent::SizeChanged(_, _) => {
-                        // println!("{:#?}", canvas.output_size().unwrap());
-                        surfaces = create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                    surfaces =
+                        create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
                             // snow_enable = !snow_enable;
                             if snow_enable {
                                 config.snow_limit
@@ -194,6 +187,33 @@ fn main() {
                                 0
                             }
                         });
+                }
+                sdl2::event::Event::KeyDown {
+                    keycode: Some(sdl2::keyboard::Keycode::S),
+                    ..
+                } => {
+                    surfaces =
+                        create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                            snow_enable = !snow_enable;
+                            if snow_enable {
+                                config.snow_limit
+                            } else {
+                                0
+                            }
+                        });
+                }
+                sdl2::event::Event::Window { win_event, .. } => match win_event {
+                    sdl2::event::WindowEvent::SizeChanged(_, _) => {
+                        // println!("{:#?}", canvas.output_size().unwrap());
+                        surfaces =
+                            create_surfaces(num_surfaces, canvas.output_size().unwrap(), revert, {
+                                // snow_enable = !snow_enable;
+                                if snow_enable {
+                                    config.snow_limit
+                                } else {
+                                    0
+                                }
+                            });
                         // println!("Created surface!")
                     }
                     _ => {}
@@ -419,7 +439,7 @@ fn load_config(con: String) -> Configuration {
         am_pm,
         revert,
         snow_enable,
-        snow_limit
+        snow_limit,
     };
 }
 
@@ -452,7 +472,7 @@ fn create_surfaces<'a>(
     corners: i32,
     size: (u32, u32),
     revert: bool,
-    snow_limit: i64
+    snow_limit: i64,
 ) -> Vec<(
     sdl2::rect::Rect,
     sdl2::surface::Surface<'a>,
@@ -495,7 +515,8 @@ fn create_surfaces<'a>(
                     surface_width,
                     surface_height,
                 );
-                let s = snow::SnowParticles::new((snow_limit / corners as i64) as i32, &mut surface);
+                let s =
+                    snow::SnowParticles::new((snow_limit / corners as i64) as i32, &mut surface);
                 x.push((surface_rect, surface, s));
                 // println!("{:?}", surface_rect)
             }

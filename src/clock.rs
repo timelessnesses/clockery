@@ -1,5 +1,5 @@
 use crate::snow;
-use chrono::{self, TimeZone, Datelike};
+use chrono::{self, Datelike, TimeZone};
 use sdl2;
 use slicestring::Slice;
 // use humantime;
@@ -63,10 +63,9 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
         surface: &mut sdl2::surface::Surface,
         snow_particle: &mut snow::SnowParticles,
     ) {
-
         let utcized = time.naive_local();
         let new_year = chrono::NaiveDate::from_ymd_opt(utcized.year() + 1, 1, 1).unwrap();
-        let time_new_year = chrono::NaiveTime::from_hms_opt(0,0,0).unwrap();
+        let time_new_year = chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap();
         let built = chrono::NaiveDateTime::new(new_year, time_new_year);
 
         let timer = {
@@ -125,23 +124,21 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             Some(middle_y + 70),
         );
         let left = built - utcized;
-        
+
         // let formatted = humantime::format_duration(left.to_std().unwrap()).to_string();
         let formatted = self.formatter(left);
-        
+
         self.center(
             formatted.as_str(),
             surface,
             self.normal_font,
-            Some(middle_y + 120)
+            Some(middle_y + 120),
         );
 
         snow_particle.render(surface, self.revert);
     }
 
-    fn formatter(
-        &self, left: chrono::Duration
-    ) -> String {
+    fn formatter(&self, left: chrono::Duration) -> String {
         let stded = left.to_std().unwrap();
         let seconds = stded.as_secs() as i64;
         let nanoseconds = stded.subsec_millis();
@@ -167,7 +164,8 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
         let mut build = String::new();
         build += "New years: ";
 
-        if left.num_hours() <= 12{ // new year 12 hours left
+        if left.num_hours() <= 12 {
+            // new year 12 hours left
             if years != 0 {
                 build += format!("{} years, ", years).as_str();
             }
@@ -180,10 +178,14 @@ impl<'a, 'b, 'c, 'd> Clock<'a, 'b, 'c, 'd> {
             if days != 0 {
                 build += format!("{} days, ", days).as_str();
             }
-            build += format!("{} hours, {} minutes, {} seconds, {} miliseconds", hours, minutes, remaining_seconds, nanoseconds).as_str();
-            return build
+            build += format!(
+                "{} hours, {} minutes, {} seconds, {} miliseconds",
+                hours, minutes, remaining_seconds, nanoseconds
+            )
+            .as_str();
+            return build;
         }
-        return "".to_string()
+        return "".to_string();
     }
 
     fn center(
