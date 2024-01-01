@@ -40,7 +40,7 @@ It should looks like this
 
 - `am_pm` is a bool where it either shows time in 24 hours format OR 12 hours format. (Thanks [Poiuu](https://twitter.com/PoiuuShho) for suggestion) Can be either enabled or disabled with `A` key.  
 - `clocks` is a list of strings where those strings must be a timezone names, please select from [this](https://docs.rs/chrono-tz/latest/chrono_tz/enum.Tz.html)  
-You MUST type the highlighted part
+You MUST type the highlighted part  
 ![./assets/tz_name.png](./assets/tz_name.png)  
 - `revert` is a bool where it either revert all colors in the program. (kinda like light/dark mode) Can be either enabled or disabled with `R` key.  
 - `snow_enable` is a bool where will it shows the "snow" particles falling from the top of the screen and limits based on `snow_limit`. Can be either enabled or disabled with `S` key.
