@@ -22,7 +22,7 @@ You have to follow this [guide](https://github.com/Rust-SDL2/rust-sdl2?tab=readm
 
 ### Building on Linux
 
-Install dependencies in [Preparation][#Preparation]
+Install dependencies in [Preparation](#preparation)
 
 1. `cargo build -r`
 
