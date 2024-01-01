@@ -6,7 +6,7 @@ A fully rewritten Clockery in Rust programming language for performance boost an
 
 ### Linux
 
-Install libtool and autopoint before hand and libmount-dev
+Install `libpng-dev`, `libsdl2-dev`, `libsdl2-ttf-dev`
 
 ### Windows
 
@@ -14,11 +14,19 @@ You have to follow this [guide](https://github.com/Rust-SDL2/rust-sdl2?tab=readm
 
 ## Building
 
+### Building on Windows
+
 1. `cargo install cargo-vcpkg`
 2. `cargo vcpkg -v build`
 3. `cargo build -r`
 
-Depends on platform's architecture, Windows will only get statically linked binary while others will not. Due to the fact that it will fail to link in both "bundled" or "static-link" feature.
+### Building on Linux
+
+Install dependencies in [Preparation][#Preparation]
+
+1. `cargo build -r`
+
+Windows does statically link the binary but I am NOT too sure with Linux's.
 
 ## Usage
 
@@ -50,3 +58,11 @@ You MUST type the highlighted part
 
 `Escape` and `CTRL+C` will close the program and save the configuration to disk.  
 `Q` will reload configuration off the disk.
+
+## CLI
+
+Run `./opengl_clockery -h` for help information.
+
+- `-f`, `--fps <FPS></FPS>` is for limiting FPS. Defaults to unlimited.
+- `-l`, `--list-gpu-renderers` is for listing all GPU rendering backends.
+- `-s`, `--selected-gpu-renderer <SELECTED_GPU_RENDERER>` is for selecting a GPU rendering backend. It is optionally and this flag is only for you to enforce which GPU renderer you wanted.

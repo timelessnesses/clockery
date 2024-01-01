@@ -20,14 +20,14 @@ sdl2 = { version = "0.36.0", features = ["use-vcpkg", "ttf", "static-link"], def
 winapi = { version = "0.3.9", features = ["winuser", "wincon"] }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
-sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf"], default-features = false } #2
+sdl2 = { version = "0.36.0", features = ["use-pkgconfig", "ttf", "static-link"], default-features = false } #2
 
 [profile.release]
 opt-level = 3
 debug = false
 
 [package.metadata.vcpkg]
-dependencies = ["sdl2", "sdl2-ttf", "sdl2-image[libjpeg-turbo,tiff,libwebp]"]
+dependencies = ["sdl2", "sdl2-ttf"]
 git = "https://github.com/microsoft/vcpkg"
 rev = "c8696863d371ab7f46e213d8f5ca923c4aef2a00"
 
